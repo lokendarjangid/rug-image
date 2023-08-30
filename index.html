@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Overlay</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+    <style>
+        body {
+            display: flex;
+            font-family: Arial, sans-serif;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url("image/background.jpeg");
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        body::before {
+            content: "";
+            background-image: url("background.jpeg");
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(10px);
+            /* Adjust the blur intensity as desired */
+        }
+
+        #popup-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #popup-content {
+            /* display: flex; */
+            position: relative;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #close-popup-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            font-size: 20px;
+            padding: 5px 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #close-popup-button:hover {
+            background-color: #d32f2f;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 6px 7px rgba(0, 0, 0, 0.5);
+            max-width: 800px;
+            min-width: 700px;
+            min-height: 400px;
+            padding: 20px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: #FFF;
+            border-radius: 10px;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            animation: fadeIn 1s;
+        }
+
+        .drop-zone {
+            border: 2px dashed #FF6347;
+            border-radius: 5px;
+            padding: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            animation: fadeIn 1s;
+        }
+
+        .drop-zone:hover {
+            background-color: rgba(255, 99, 71, 0.1);
+        }
+
+        #result-image {
+            max-height: 50vh;
+            /* max-width: 67%; */
+            height: auto;
+            display: none;
+            margin-bottom: 20px;
+            animation: fadeIn 1s;
+            border-radius: 10px;
+        }
+
+        #download-button {
+            display: none;
+            background-color: #FF6347;
+            color: #FFF;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            transition: transform 0.3s;
+            border-radius: 5px;
+        }
+
+        #download-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 426px) {
+            main {
+                min-width: 75%;
+            }
+
+            #result-image {
+                max-height: 25vh;
+            }
+        }
+
+        #cropping-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #cropping-container {
+            position: relative;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            max-height: 80%;
+            overflow: auto;
+        }
+
+        #close-cropping-popup-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            font-size: 20px;
+            padding: 5px 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #close-cropping-popup-button:hover {
+            background-color: #d32f2f;
+        }
+
+        #image-cropping-area {
+            max-height: 50vh;
+            height: auto;
+            margin-bottom: 20px;
+            animation: fadeIn 1s;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 426px) {
+            #image-cropping-area {
+                max-height: 25vh;
+            }
+        }
+
+        #crop-button {
+            display: block;
+            margin: 20px auto;
+            background-color: #FF6347;
+            color: #FFF;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            transition: transform 0.3s;
+            border-radius: 5px;
+        }
+
+        #crop-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="popup-container">
+        <div id="popup-content">
+            <main>
+                <h1>Image Overlay</h1>
+                <div class="drop-zone" id="drop-zone">
+                    <p>Drag and drop a person image here or click to upload</p>
+                </div>
+                <h2>Result:</h2>
+                <img id="result-image" src="" alt="Result image">
+                <button id="download-button">Download</button>
+            </main>
+            <button id="close-popup-button">&times;</button>
+        </div>
+    </div>
+    <div id="cropping-popup" style="display: none;">
+        <div id="cropping-container">
+            <button id="close-cropping-popup-button">&times;</button>
+            <h2>Select Area:</h2>
+            <div id="image-cropping-area"></div>
+            <button id="crop-button">Crop</button>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // popup code
+        const closePopupButton = document.getElementById('close-popup-button');
+        const popupContainer = document.getElementById('popup-container');
+
+        closePopupButton.addEventListener('click', () => {
+            // Get the referrer URL
+            const referrerUrl = document.referrer;
+            // Do something with the referrer URL, such as redirecting to it
+            window.location.href = referrerUrl;
+        });
+
+        // image showup code 
+        const dropZone = document.getElementById('drop-zone');
+        const resultImage = document.getElementById('result-image');
+        const downloadButton = document.getElementById('download-button');
+
+        dropZone.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            // it should only accept jpeg and png files
+            input.accept = 'image/jpeg, image/png';
+            input.addEventListener('change', handleFileSelect);
+            input.click();
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFileSelect(e);
+            }
+        });
+
+        async function handleFileSelect(e) {
+            const file = e.target.files ? e.target.files[0] : e.dataTransfer.files[0];
+            if (!file) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('person', file);
+
+            fetch('/overlay', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.blob())
+                .then(imageBlob => {
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    resultImage.src = imageUrl;
+                    resultImage.style.display = 'block';
+                    downloadButton.style.display = 'block';
+                    downloadButton.onclick = () => {
+                        const link = document.createElement('a');
+                        link.href = imageUrl;
+                        link.download = 'result.jpg';
+                        link.click();
+                    };
+                });
+        }
+
+        // ...  crop button code
+
+        const croppingPopup = document.getElementById('cropping-popup');
+        const closeCroppingPopupButton = document.getElementById('close-cropping-popup-button');
+
+        closeCroppingPopupButton.addEventListener('click', () => {
+            croppingPopup.style.display = 'none';
+        });
+
+        const croppingContainer = document.getElementById('cropping-container');
+        const imageCroppingArea = document.getElementById('image-cropping-area');
+        const cropButton = document.getElementById('crop-button');
+        let cropper;
+
+        async function handleFileSelect(e) {
+            const file = e.target.files ? e.target.files[0] : e.dataTransfer.files[0];
+            if (!file) {
+                return;
+            }
+
+            const imageUrl = URL.createObjectURL(file);
+            const image = new Image();
+            image.src = imageUrl;
+            image.id = 'image-to-crop';
+            imageCroppingArea.innerHTML = '';
+            imageCroppingArea.appendChild(image);
+
+            image.onload = () => {
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                });
+                croppingPopup.style.display = 'flex'; // Show the cropping container
+                croppingContainer.style.display = 'block';
+            };
+        }
+
+        cropButton.addEventListener('click', () => {
+            if (!cropper) {
+                return;
+            }
+
+            const croppedCanvas = cropper.getCroppedCanvas();
+            croppedCanvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('person', blob);
+
+                fetch('/overlay', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.blob())
+                    .then(imageBlob => {
+                        const imageUrl = URL.createObjectURL(imageBlob);
+                        resultImage.src = imageUrl;
+                        resultImage.style.display = 'block';
+                        downloadButton.style.display = 'block';
+                        downloadButton.onclick = () => {
+                            const link = document.createElement('a');
+                            link.href = imageUrl;
+                            link.download = 'result.jpg';
+                            link.click();
+                        };
+                    });
+
+                croppingContainer.style.display = 'none';
+            });
+        });
+        $(document).ready(function () {
+            $('#crop-button').on('click', function () {
+                $('#cropping-popup').hide();
+            });
+        });
+
+// ...
+
+    </script>
+</body>
+
+</html>
