@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file, send_from_directory
 import cv2
+import os
 import numpy as np
 from io import BytesIO
 import mediapipe as mp
@@ -143,3 +144,7 @@ def serve_image(filename):
 def index():
     return send_file('index.html')
 
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
