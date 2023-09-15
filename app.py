@@ -90,13 +90,40 @@ def overlay_product(person_img, product_img):
     return person_img
 
 
-def overlay_frame(result_img, frame_path):
+def overlay_frame(result_img, frame_path, person_before):
     # Read the frame image with transparency (alpha channel)
     frame_img = cv2.imread(frame_path, cv2.IMREAD_UNCHANGED)
 
     # Resize the frame image to match the dimensions of the result image
     frame_resized = cv2.resize(
         frame_img, (result_img.shape[1], result_img.shape[0]))
+
+    # Calculate dynamic 'before_height' and 'before_width' based on result_img dimensions
+    height_ratio = 0.25  # Adjust the height ratio as desired
+    width_ratio = 0.25   # Adjust the width ratio as desired
+
+    before_height = int(result_img.shape[0] * height_ratio)
+    before_width = int(result_img.shape[1] * width_ratio)
+
+    # Calculate the position for placing the 'person_before' image
+    distance_from_top = int(result_img.shape[0] * 0.60)
+    distance_from_left = int(result_img.shape[1] * 0.03)
+
+    # Calculate the region for placing the 'person_before' image
+    top_before = distance_from_top
+    bottom_before = top_before + before_height
+    left_before = distance_from_left
+    right_before = left_before + before_width
+
+    # Ensure that the region falls within the dimensions of the 'result_img'
+    if top_before >= 0 and left_before >= 0 and bottom_before <= result_img.shape[0] and right_before <= result_img.shape[1]:
+        # Resize the 'person_before' image to the dynamic dimensions before overlaying
+        person_before_resized = cv2.resize(
+            person_before, (before_width, before_height))
+
+        # Overlay the 'person_before' image on the 'result_img' before the frame
+        result_img[top_before:bottom_before,
+                   left_before:right_before] = person_before_resized
 
     # Overlay the frame image on the result image, taking into account the alpha channel
     if frame_resized.shape[2] == 4:
@@ -115,6 +142,8 @@ def overlay():
     person_img = cv2.imdecode(np.frombuffer(
         person_img.read(), np.uint8), cv2.IMREAD_COLOR)
 
+    person_before = person_img.copy()
+
     # Load the product image from the specified path
     product_img = cv2.imread('image/cap.png', cv2.IMREAD_UNCHANGED)
 
@@ -123,7 +152,7 @@ def overlay():
     # Call the overlay_frame function to add the frame image
     frame_path = 'image/frame.png'
     result_with_frame = overlay_frame(
-        result, frame_path)
+        result, frame_path, person_before)
 
     buffer = BytesIO()
     _, encoded = cv2.imencode(
@@ -147,4 +176,4 @@ def index():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
